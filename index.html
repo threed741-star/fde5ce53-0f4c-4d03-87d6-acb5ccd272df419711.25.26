@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>প্রিন্ট মিটার ম্যানেজার</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root { 
+            --primary: #2c3e50; 
+            --secondary: #3498db; 
+            --success: #27ae60; 
+            --warning: #f39c12; 
+            --danger: #e74c3c; 
+            --light: #f4f7f6; 
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; padding: 16px; color: #333; font-size: 16px; }
+        .container { max-width: 100%; margin: 0 auto; background: #fff; padding: 28px 32px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        h1 { text-align: center; color: var(--primary); margin-bottom: 18px; font-size: 2em; }
+
+        /* Last Month Banner */
+        .last-month-banner {
+            background: linear-gradient(135deg, var(--primary), #34495e);
+            color: white;
+            border-radius: 12px;
+            padding: 18px 28px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-shadow: 0 3px 10px rgba(44,62,80,0.3);
+        }
+        .last-month-banner .lm-label { font-size: 1.1em; opacity: 0.85; }
+        .last-month-banner .lm-value { font-size: 2em; font-weight: bold; color: #2ecc71; }
+        .last-month-banner .lm-name { font-size: 1em; opacity: 0.7; margin-top: 3px; }
+
+        .top-controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; background: #eee; padding: 14px 16px; border-radius: 10px; }
+        .filter-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .data-tools { display: flex; gap: 12px; }
+        
+        .input-card { background: #eef2f3; padding: 22px; border-radius: 10px; border-left: 5px solid var(--secondary); margin-bottom: 28px; }
+        .input-row { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 1em; }
+        input[type="text"], input[type="date"], input[type="number"] { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1.05em; }
+        input[type="file"] { display: none; }
+        
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: white; font-size: 1em; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        
+        .btn-save { background: var(--secondary); padding: 13px 28px; font-size: 1.05em; height: 46px; }
+        .btn-filter { background: #7f8c8d; padding: 12px 18px; }
+        .btn-today { background: var(--success); padding: 12px 18px; }
+        .btn-30days { background: #16a085; padding: 12px 18px; }
+        .btn-json-down { background: var(--primary); padding: 12px 18px; }
+        .btn-json-up { background: var(--warning); color: #333; padding: 12px 18px; }
+        .btn-debug { background: #333; padding: 12px 18px; font-size: 0.9em; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; font-size: 1.05em; }
+        th, td { border: 1px solid #e0e0e0; padding: 16px 14px; text-align: left; vertical-align: top; }
+        th { background: var(--primary); color: white; font-weight: 700; font-size: 1.05em; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        
+        .sub-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee; }
+        .sub-row:last-child { border-bottom: none; }
+        .sub-info { display: flex; align-items: center; gap: 10px; font-size: 1em; }
+        .sub-actions { display: flex; gap: 6px; }
+        
+        .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1em; transition: 0.2s; color: white; }
+        .icon-btn:hover { transform: scale(1.12); }
+        .btn-add { background: var(--success); }
+        .btn-edit { background: var(--warning); color: #333; }
+        .btn-del { background: var(--danger); }
+        .btn-pdf { background: var(--primary); }
+        .btn-edit-main { background: #8e44ad; }
+
+        .total-badge { background: var(--primary); color: white; padding: 7px 14px; border-radius: 6px; font-size: 1.05em; font-weight: bold; }
+        .time-text { font-size: 0.9em; color: #7f8c8d; margin-left: 5px; }
+        .today-tag { background: var(--success); color: white; font-size: 0.8em; padding: 3px 8px; border-radius: 10px; margin-left: 5px; vertical-align: middle; }
+        
+        .empty-msg { text-align: center; color: #999; padding: 28px; font-style: italic; font-size: 1.1em; }
+        .status-bar { text-align: center; margin-bottom: 18px; font-weight: bold; min-height: 22px; font-size: 1.05em; }
+        .msg-success { color: var(--success); }
+        .msg-error { color: var(--danger); }
+        .msg-info { color: var(--secondary); }
+
+        #debugConsole {
+            margin-top: 20px; background: #222; color: #0f0;
+            padding: 15px; font-family: monospace; font-size: 13px;
+            height: 200px; overflow-y: scroll; border-radius: 6px;
+            display: none; border: 1px solid #444;
+        }
+        .log-error { color: #ff6b6b; }
+        .log-info { color: #4ecdc4; }
+
+        /* Range filter */
+        .btn-back { background: #7f8c8d; padding: 12px 18px; }
+
+        /* Pieces / calc / summaries */
+        .ps-wrap { background:#fff8e6; border-left:4px solid #f39c12; border-radius:8px; padding:12px 16px; margin-bottom:12px; display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:1.05em; }
+        .ps-title { font-weight:bold; color:#8a5a00; margin-right:4px; }
+        .ps-chip { background:#fff; border:1px solid #f0d9a8; border-radius:20px; padding:5px 14px; color:#444; }
+        .ps-chip b { color:var(--primary); margin-right:4px; }
+        .ps-chip.ps-total { background:#f39c12; border-color:#f39c12; color:#fff; font-weight:bold; }
+        .pc-row { display:flex; align-items:center; justify-content:center; gap:6px; padding:3px 0; border-bottom:1px dashed #eee; font-size:.95em; }
+        .pc-type { color:#555; }
+        .pc-qty { font-weight:bold; color:var(--primary); font-size:1.15em; }
+        .mini-btn { width:24px; height:24px; min-width:24px; border-radius:50%; font-size:.68em; padding:0; }
+        .pc-total { margin-top:6px; font-weight:bold; color:#f39c12; }
+        .calc-box { margin-top:8px; border-top:1px dashed #ccc; padding-top:6px; font-size:.85em; text-align:center; }
+        input.calc-input { width:100%; padding:5px 6px; font-size:.9em; border:1px solid #ccc; border-radius:5px; box-sizing:border-box; text-align:center; margin:4px 0; }
+        .calc-total { font-weight:bold; color:#27ae60; font-size:1.05em; }
+        .calc-hint { color:#aaa; }
+        .calc-extra { display:flex; justify-content:space-between; align-items:center; gap:4px; color:#555; padding:1px 0; }
+        #pieceSummary { display:block; }
+        .ps-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:5px 0; }
+        .ps-row + .ps-row { border-top:1px dashed #f0d9a8; }
+        .draft-row { border:1px dashed #27ae60; background:#f6fff9; border-radius:6px; padding:5px; margin:6px 0; }
+        select.calc-select { padding:6px 4px; font-size:.9em; border:1px solid #ccc; border-radius:5px; box-sizing:border-box; margin:4px 0; background:#fff; min-width:0; }
+        .draft-total { font-weight:bold; color:#27ae60; font-size:.95em; min-height:18px; }
+        .draft-ok { background:#27ae60; padding:5px 18px; font-size:.85em; border-radius:6px; }
+        .draft-x { background:#95a5a6; padding:5px 11px; font-size:.85em; border-radius:6px; }
+        .piece-box { width:340px; }
+        .piece-box select, .piece-box input { width:100%; box-sizing:border-box; padding:11px 12px; border:1px solid #ddd; border-radius:8px; font-size:1.05em; margin-bottom:10px; }
+
+        /* First-time loading overlay */
+        #loadingOverlay {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #1a252f, #2c3e50);
+            z-index: 99999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 22px;
+        }
+        #loadingOverlay .lo-logo {
+            font-size: 2.2em; font-weight: bold; color: #fff;
+            letter-spacing: 2px;
+        }
+        #loadingOverlay .lo-logo span { color: #2ecc71; }
+        #loadingOverlay .lo-label {
+            color: #bdc3c7; font-size: 1.05em;
+        }
+        #loadingOverlay .lo-bar-wrap {
+            width: 280px; height: 10px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px; overflow: hidden;
+        }
+        #loadingOverlay .lo-bar {
+            height: 100%; width: 0%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            border-radius: 10px;
+            transition: width 0.25s ease;
+        }
+        #loadingOverlay .lo-percent {
+            color: #2ecc71; font-size: 1.5em; font-weight: bold;
+        }
+
+        /* Code verification modal */
+        .code-overlay {
+            display: none; position: fixed;
+            inset: 0; background: rgba(0,0,0,0.55);
+            z-index: 9999; align-items: center; justify-content: center;
+        }
+        .code-overlay.active { display: flex; }
+        .code-box {
+            background: #fff; border-radius: 14px;
+            padding: 32px 32px 24px; width: 320px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25); text-align: center;
+        }
+        .code-box h3 { margin: 0 0 8px; color: var(--primary); font-size: 1.25em; }
+        .code-box p  { margin: 0 0 18px; color: #888; font-size: 0.95em; }
+        .code-input {
+            width: 100%; padding: 12px 16px; font-size: 1.5em;
+            letter-spacing: 8px; text-align: center;
+            border: 2px solid #ddd; border-radius: 10px;
+            outline: none; box-sizing: border-box;
+        }
+        .code-input:focus { border-color: var(--primary); }
+        .code-err { color: var(--danger); font-size: 0.9em; min-height: 20px; margin: 10px 0 4px; }
+        .code-btns { display: flex; gap: 12px; margin-top: 16px; }
+        .code-btns button { flex: 1; padding: 12px; font-size: 1em; }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 16px; }
+            .top-controls { flex-direction: column; align-items: stretch; }
+            .filter-group, .data-tools { justify-content: space-between; }
+            .input-row { flex-direction: column; }
+            .sub-row { flex-direction: column; align-items: flex-start; gap: 5px; }
+            .sub-actions { width: 100%; justify-content: flex-end; }
+        }
+    </style>
+</head><body>
+
+<!-- First-time Loading Overlay -->
+<div id="loadingOverlay" style="display:none;">
+    <div class="lo-logo">🖨️ PRINT <span>MITTER</span></div>
+    <div class="lo-percent" id="loPercent">0%</div>
+    <div class="lo-bar-wrap">
+        <div class="lo-bar" id="loBar"></div>
+    </div>
+    <div class="lo-label" id="loLabel">ডাটা লোড হচ্ছে...</div>
+</div>
+
+<div class="container">
+    <h1><i class="fas fa-print"></i>3D-প্রিন্ট মিটার ম্যানেজার</h1>
+    <h1><i class="fas fa-print"></i> This System Design And Development by SOHAN</h1>
+
+    <!-- Last Month Banner -->
+    <div class="last-month-banner">
+        <div>
+            <div class="lm-label"><i class="fas fa-calendar-alt"></i> <span id="bannerMonthLabel">চলতি মাসের</span> মোট প্রিন্ট</div>
+            <div class="lm-name" id="lastMonthName">—</div>
+        </div>
+        <div style="text-align:right; display:flex; gap:20px; align-items:center;">
+            <div>
+                <div class="lm-value"><span id="lastMonthTotal">0.00</span> মিটার</div>
+            </div>
+            <div>
+                <div class="lm-value" style="color:#f39c12;"><span id="lastMonthQty">0</span> পিস</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month pieces by type -->
+    <div id="pieceSummary" class="ps-wrap"></div>
+
+    <!-- Date Total Quantity Bar -->
+    <div id="qtyBar" style="display:none; background:#eaf4ff; border-left:4px solid var(--primary); padding:9px 16px; border-radius:6px; margin-bottom:8px; font-size:1em; color:var(--primary);">
+        <i class="fas fa-tshirt"></i> নির্বাচিত তারিখের মোট পিস: <strong id="qtyBarTotal">0</strong> পিস <span id="qtyBarTypes" style="margin-left:10px;"></span>
+    </div>
+
+    
+    <div id="statusBar" class="status-bar"></div>
+
+    <!-- Top Controls -->
+    <div class="top-controls">
+        <div class="filter-group">
+            <label style="margin:0;">তারিখ:</label>
+            <input type="date" id="filterDate" style="width: auto;" onchange="rangeFilter=null; searchFilter=''; currentPage=1; document.getElementById('monthYearPicker').value=''; document.getElementById('searchInput').value=''; document.getElementById('last30View').style.display='none'; document.getElementById('normalView').style.display='block'; renderTable()">
+            <button class="btn-today" onclick="setTodayFilter()"><i class="fas fa-calendar-day"></i> আজ</button>
+            <button class="btn-30days" onclick="showLast30Days()"><i class="fas fa-calendar-week"></i> শেষ ৩০ দিন</button>
+            <input type="month" id="monthYearPicker" title="মাস ও বছর বেছে নিন" onchange="showMonthFilter(this.value)" style="padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:0.95em; cursor:pointer;">
+            <div style="position:relative; display:flex; align-items:center;">
+                <i class="fas fa-search" style="position:absolute; left:10px; color:#aaa; pointer-events:none; z-index:1;"></i>
+                <input type="text" id="searchInput" placeholder="কাস্টমার খুঁজুন..." autocomplete="off"
+                    oninput="onSearchInput(this.value)"
+                    style="padding:8px 12px 8px 32px; border-radius:6px; border:1px solid #ccc; font-size:0.95em; min-width:200px;">
+            </div>
+        </div>
+        <div class="data-tools">
+            <input type="file" id="jsonFileInput" accept=".json" onchange="uploadJSON(this)" style="display:none;">
+        </div>
+    </div>
+
+    <!-- Input Form -->
+    <div class="input-card">
+        <h3 style="margin-top:0;">নতুন জব তৈরি করুন <span id="todayLabel" class="today-tag" style="display:none;">আজ</span></h3>
+        <div class="input-row">
+            <div class="form-group">
+                <label>মেইন ফাইলের নাম</label>
+                <input type="text" id="mainNameInput" placeholder="যেমন: Brochure Design">
+            </div>
+            <div class="form-group" style="min-width:160px;">
+                <label>পিসের ধরন</label>
+                <select id="jobPieceType" onchange="onTypeChange('jobPieceType','jobPieceCustom')" style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:6px;font-size:1.05em;box-sizing:border-box;"></select>
+                <input type="text" id="jobPieceCustom" placeholder="ধরন লিখুন" style="display:none;margin-top:6px;">
+            </div>
+            <div class="form-group" style="min-width:110px;">
+                <label>পিস</label>
+                <input type="number" id="jobQtyInput" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>তারিখ</label>
+                <input type="date" id="jobDateInput">
+            </div>
+            <div style="padding-bottom: 1px;">
+                <button class="btn-save" id="btnCreateJob" onclick="createJob()"><i class="fas fa-plus-circle"></i> তৈরি করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Range Filter Banner (date/month filters only) -->
+    <div id="rangeFilterBanner" style="display:none; background:#eafaf1; border-left:4px solid var(--success); padding:10px 15px; border-radius:6px; margin-bottom:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <span><i class="fas fa-calendar-week"></i> <strong id="rangeFilterLabel">শেষ ৩০ দিনের</strong> ডাটা দেখানো হচ্ছে — <span id="rangeFilterText"></span></span>
+        <button class="btn-back" onclick="clearRangeFilter()"><i class="fas fa-times"></i> ফিল্টার মুছুন</button>
+    </div>
+
+    <!-- Normal Data Table (date filter / search / all) -->
+    <div id="normalView">
+        <div style="overflow-x: auto;">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th width="11%">তারিখ ও সময়</th>
+                        <th width="16%">মেইন ফাইল</th>
+                        <th width="28%">সাব ফাইল সমূহ</th>
+                        <th width="15%" style="text-align:center">পিস</th>
+                        <th width="18%" style="text-align:center">অ্যাকশন</th>
+                        <th width="12%" style="text-align:center">পেমেন্ট</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="6" class="empty-msg">ডাটা লোড হচ্ছে...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="margin-top: 20px; text-align: right; font-size: 1.3em; border-top: 2px solid #333; padding-top: 10px;">
+            মোট: <span id="grandTotal" style="color: var(--success); font-weight: bold;">0.00</span> মিটার
+        </div>
+        <!-- Pagination -->
+        <div id="paginationBar" style="display:none; justify-content:center; align-items:center; gap:8px; margin-top:16px; flex-wrap:wrap;">
+            <button id="prevBtn" onclick="changePage(-1)" class="btn-back" style="padding:7px 16px;"><i class="fas fa-chevron-left"></i> আগের</button>
+            <span id="pageInfo" style="font-weight:bold; color:var(--primary); font-size:1em;"></span>
+            <button id="nextBtn" onclick="changePage(1)" class="btn-30days" style="padding:7px 16px;">পরের <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- শেষ ৩০ দিন — dedicated separate view -->
+    <div id="last30View" style="display:none;">
+        <div style="background:#eafaf1; border-left:4px solid #16a085; padding:10px 15px; border-radius:6px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <span><i class="fas fa-calendar-week"></i> <strong>শেষ ৩০ দিনের</strong> ডাটা — <span id="last30RangeText" style="color:#555;"></span></span>
+            <button class="btn-back" onclick="closeLast30View()"><i class="fas fa-times"></i> বন্ধ করুন</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table id="last30Table">
+                <thead>
+                    <tr>
+                        <th width="11%">তারিখ ও সময়</th>
+                        <th width="16%">মেইন ফাইল</th>
+                        <th width="28%">সাব ফাইল সমূহ</th>
+                        <th width="15%" style="text-align:center">পিস</th>
+                        <th width="18%" style="text-align:center">অ্যাকশন</th>
+                        <th width="12%" style="text-align:center">পেমেন্ট</th>
+                    </tr>
+                </thead>
+                <tbody id="last30TableBody"></tbody>
+            </table>
+        </div>
+        <div style="margin-top: 20px; text-align: right; font-size: 1.3em; border-top: 2px solid #333; padding-top: 10px;">
+            মোট: <span id="last30GrandTotal" style="color: var(--success); font-weight: bold;">0.00</span> মিটার
+        </div>
+        <!-- Pagination for last30 -->
+        <div id="last30PaginationBar" style="display:none; justify-content:center; align-items:center; gap:8px; margin-top:16px; flex-wrap:wrap;">
+            <button id="last30PrevBtn" onclick="changeLast30Page(-1)" class="btn-back" style="padding:7px 16px;"><i class="fas fa-chevron-left"></i> আগের</button>
+            <span id="last30PageInfo" style="font-weight:bold; color:var(--primary); font-size:1em;"></span>
+            <button id="last30NextBtn" onclick="changeLast30Page(1)" class="btn-30days" style="padding:7px 16px;">পরের <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <div id="debugConsole"></div>
+</div>
+
+<!-- Code Verification Modal -->
+<div class="code-overlay" id="pieceOverlay">
+    <div class="code-box piece-box">
+        <h3>👕 পিস যোগ / এডিট</h3>
+        <p>ধরন বেছে নিন বা নিজে লিখুন</p>
+        <select id="pieceType" onchange="onTypeChange('pieceType','pieceCustom')"></select>
+        <input type="text" id="pieceCustom" placeholder="ধরন লিখুন (যেমন: Hoodie)" style="display:none;">
+        <input type="number" id="pieceQty" placeholder="কত পিস?" min="1" onkeydown="if(event.key==='Enter') savePiece()">
+        <div class="code-btns">
+            <button class="btn-save" onclick="savePiece()"><i class="fas fa-check"></i> সেভ</button>
+            <button class="btn-back" onclick="closePieceModal()"><i class="fas fa-times"></i> বাতিল</button>
+        </div>
+    </div>
+</div>
+
+<div class="code-overlay" id="codeOverlay">
+    <div class="code-box">
+        <h3>🔒 কোড দিন</h3>
+        <p id="codeActionLabel">এই কাজটি করতে কোড প্রয়োজন</p>
+        <input type="password" id="codeInput" class="code-input" maxlength="10"
+               placeholder="••••" autocomplete="off"
+               onkeydown="if(event.key==='Enter') confirmCode()">
+        <div class="code-err" id="codeErr"></div>
+        <div class="code-btns">
+            <button class="btn-save" onclick="confirmCode()"><i class="fas fa-check"></i> নিশ্চিত</button>
+            <button class="btn-back" onclick="cancelCode()"><i class="fas fa-times"></i> বাতিল</button>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDfB8qbWgR52MjKniNX7wMi2LK746rov6o",
+        authDomain: "ecommer-e4953.firebaseapp.com",
+        projectId: "ecommer-e4953",
+        storageBucket: "ecommer-e4953.firebasestorage.app",
+        messagingSenderId: "252287127049",
+        appId: "1:252287127049:web:2311c51d7ab30c1c1cb2d8",
+        measurementId: "G-XZYK1TRSME"
+    };
+
+    let allData = [];
+    let rangeFilter = null;
+    let searchFilter = '';
+    let currentPage = 1;
+    let last30Page = 1;
+    const PAGE_SIZE = 20;
+    let isOnline = navigator.onLine;
+    const LOCAL_KEY = "print_meter_data_v2";
+    let db;
+    const COLLECTION = "print_jobs";
+
+    // --- LOGGING ---
+    function log(msg, type = 'info') {
+        const consoleDiv = document.getElementById('debugConsole');
+        const time = new Date().toLocaleTimeString();
+        const colorClass = type === 'error' ? 'log-error' : 'log-info';
+        consoleDiv.innerHTML += `<div class="${colorClass}">[${time}] ${msg}</div>`;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        console.log(msg);
+    }
+    function toggleDebug() {
+        const d = document.getElementById('debugConsole');
+        d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    }
+    function showMsg(txt, type) {
+        const el = document.getElementById('statusBar');
+        el.innerText = txt;
+        el.className = 'status-bar msg-' + type;
+        setTimeout(() => { el.innerText = ''; el.className = 'status-bar'; }, 4000);
+    }
+
+    // --- HELPERS ---
+    const getTodayStr = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    };
+    const formatNum = (n) => parseFloat(n || 0).toFixed(2);
+    const formatDateBD = (str) => str ? str.split('-').reverse().join('/') : '';
+    const formatTime = (str) => {
+        if(!str) return '';
+        let [h, m] = str.split(':');
+        h = parseInt(h);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return `${h}:${m} ${ampm}`;
+    };
+
+    // --- CURRENT MONTH BANNER ---
+    const bnMonths = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+
+    function updateLastMonthBanner(customPrefix) {
+        customPrefix = customPrefix || (document.getElementById('monthYearPicker') && document.getElementById('monthYearPicker').value) || null;
+        let prefix, label, isCurrentMonth;
+        if (customPrefix) {
+            const [y, m] = customPrefix.split('-');
+            prefix = customPrefix;
+            label = `${bnMonths[parseInt(m)-1]} ${y} মাসের`;
+            isCurrentMonth = false;
+        } else {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            prefix = `${y}-${m}`;
+            label = `${bnMonths[now.getMonth()]} ${y} মাসের`;
+            isCurrentMonth = true;
+        }
+
+        const monthJobs = allData.filter(job => job.date && job.date.startsWith(prefix));
+        const total = monthJobs.reduce((s, j) => s + parseFloat(j.totalMeter || 0), 0);
+        const t = totalsByType(monthJobs);
+
+        document.getElementById('lastMonthTotal').innerText = formatNum(total);
+        document.getElementById('lastMonthQty').innerText   = t.total;
+        document.getElementById('lastMonthName').innerText  = label;
+        document.getElementById('bannerMonthLabel').innerText = isCurrentMonth ? 'চলতি মাসের' : label.replace(' মাসের','');
+        renderTopSummary();
+    }
+
+    // --- DATA HANDLING ---
+    function loadLocalData() {
+        try {
+            const stored = localStorage.getItem(LOCAL_KEY);
+            if (stored) {
+                allData = JSON.parse(stored);
+                sortData();
+                updateLastMonthBanner();
+                renderTable();
+                log(`ক্যাশ থেকে ${allData.length}টি ডাটা লোড।`, 'info');
+                return true;
+            }
+        } catch (e) { log("ক্যাশ এরর: " + e.message, 'error'); }
+        allData = [];
+        updateLastMonthBanner();
+        renderTable();
+        return false;
+    }
+
+    function saveToLocal() {
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(allData));
+        updateLastMonthBanner();
+        renderTable();
+    }
+
+    function sortData() {
+        allData.sort((a, b) => {
+            const dateA = new Date(a.date + 'T' + (a.time || '00:00'));
+            const dateB = new Date(b.date + 'T' + (b.time || '00:00'));
+            return dateB - dateA;
+        });
+    }
+
+    // Background sync with loader — only shows loading bar if Firebase has new data
+    async function backgroundSyncWithLoader() {
+        if (!isOnline) return;
+        try {
+            // Quick count check first
+            const snapshot = await db.collection(COLLECTION).get();
+            const remoteCount = snapshot.docs.length;
+            const localCount  = allData.length;
+
+            // Check if Firebase has items not in local cache
+            const localIds = new Set(allData.map(j => j.id));
+            const hasNewData = snapshot.docs.some(doc => !localIds.has(doc.id));
+
+            if (!hasNewData) {
+                // Nothing new — push any local-only items silently
+                for (const item of allData) {
+                    const remoteIds = new Set(snapshot.docs.map(d => d.id));
+                    if (!remoteIds.has(item.id)) {
+                        await db.collection(COLLECTION).doc(item.id).set(item).catch(() => {});
+                    }
+                }
+                return; // no loading bar needed
+            }
+
+            // New data found from another device — show loading bar
+            showLoader('নতুন ডাটা পাওয়া গেছে...');
+            let p = 5;
+            const iv = setInterval(() => {
+                if (p < 40) { p += 5; setProgress(p); }
+                else clearInterval(iv);
+            }, 80);
+
+            const remoteData = [];
+            snapshot.forEach(doc => remoteData.push({ id: doc.id, ...doc.data() }));
+
+            clearInterval(iv);
+            setProgress(70, 'মার্জ হচ্ছে...');
+
+            const remoteMap = {};
+            remoteData.forEach(j => remoteMap[j.id] = j);
+            const localOnly = allData.filter(j => !remoteMap[j.id]);
+
+            for (const item of localOnly) {
+                await db.collection(COLLECTION).doc(item.id).set(item).catch(() => {});
+            }
+
+            allData = [...remoteData, ...localOnly];
+            sortData();
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(allData));
+
+            setProgress(95, 'আপডেট হচ্ছে...');
+            updateLastMonthBanner();
+            renderTable();
+            hideLoader();
+            log(`নতুন ডাটা মার্জ — মোট ${allData.length}টি।`, 'info');
+
+        } catch (e) {
+            log("সিঙ্ক এরর: " + e.message, 'error');
+        }
+    }
+
+    // Background sync — merges Firebase data into cache silently
+    async function backgroundSync() {
+        if (!isOnline) return;
+        try {
+            const snapshot = await db.collection(COLLECTION).get();
+            if (snapshot.empty) return;
+            const remoteData = [];
+            snapshot.forEach(doc => remoteData.push({ id: doc.id, ...doc.data() }));
+
+            // merge: remote wins for existing ids, keep local-only items too
+            const remoteMap = {};
+            remoteData.forEach(j => remoteMap[j.id] = j);
+            const localOnlyItems = allData.filter(j => !remoteMap[j.id]);
+
+            // push local-only items up to Firebase
+            for (const item of localOnlyItems) {
+                await db.collection(COLLECTION).doc(item.id).set(item).catch(() => {});
+            }
+
+            allData = [...remoteData, ...localOnlyItems];
+            sortData();
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(allData));
+            updateLastMonthBanner();
+            renderTable();
+            log(`সিঙ্ক সম্পন্ন — মোট ${allData.length}টি।`, 'info');
+        } catch (e) {
+            log("ব্যাকগ্রাউন্ড সিঙ্ক এরর: " + e.message, 'error');
+        }
+    }
+
+    // Check if Firebase has new records not in local cache
+    async function checkForNewData() {
+        if (!isOnline) return;
+        try {
+            const snapshot = await db.collection(COLLECTION).get();
+            const localIds = new Set(allData.map(j => j.id));
+            const hasNew = snapshot.docs.some(doc => !localIds.has(doc.id));
+
+            if (hasNew) {
+                // New data from another device found — load everything fresh
+                loadDataFromFirebase();
+            } else {
+                // Push any local-only items to Firebase silently
+                for (const item of allData) {
+                    if (!snapshot.docs.find(d => d.id === item.id)) {
+                        db.collection(COLLECTION).doc(item.id).set(item).catch(() => {});
+                    }
+                }
+            }
+        } catch (e) {
+            log("চেক এরর: " + e.message, 'error');
+        }
+    }
+
+    // Progress bar helpers
+    function showLoader(label) {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        setProgress(0, label || 'ডাটা লোড হচ্ছে...');
+    }
+    function setProgress(pct, label) {
+        pct = Math.min(100, Math.max(0, Math.round(pct)));
+        document.getElementById('loBar').style.width = pct + '%';
+        document.getElementById('loPercent').innerText = pct + '%';
+        if (label) document.getElementById('loLabel').innerText = label;
+    }
+    function hideLoader() {
+        setProgress(100, 'সম্পন্ন ✓');
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }, 500);
+    }
+
+    async function loadDataFromFirebase() {
+        if (!isOnline) { loadLocalData(); return; }
+        showLoader('Firebase এর সাথে সংযোগ হচ্ছে...');
+
+        // Slow creep to 40% while waiting for Firebase response
+        let p = 0;
+        const creep = setInterval(() => {
+            if (p < 40) { p += 1; setProgress(p, 'Firebase এর সাথে সংযোগ হচ্ছে...'); }
+            else clearInterval(creep);
+        }, 60);
+
+        try {
+            const snapshot = await db.collection(COLLECTION).get();
+            clearInterval(creep);
+
+            setProgress(50, 'ডাটা ডাউনলোড হচ্ছে...');
+            allData = [];
+            const docs = snapshot.docs;
+            docs.forEach((doc, i) => {
+                allData.push({ id: doc.id, ...doc.data() });
+                // 50–85% proportional to docs processed
+                const pct = 50 + Math.round((i / Math.max(1, docs.length)) * 35);
+                if (i % Math.max(1, Math.floor(docs.length / 20)) === 0) setProgress(pct);
+            });
+
+            setProgress(88, 'ডাটা সাজানো হচ্ছে...');
+            sortData();
+
+            setProgress(93, 'লোকালে সেভ হচ্ছে...');
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(allData));
+
+            setProgress(97, 'পেজ তৈরি হচ্ছে...');
+            updateLastMonthBanner();
+            renderTable();
+
+            // Only reach 100% after everything is done
+            hideLoader();
+            log(`Firebase থেকে ${allData.length}টি ডাটা লোড।`, 'info');
+        } catch (e) {
+            clearInterval(creep);
+            hideLoader();
+            log("লোড এরর: " + e.message, 'error');
+            showMsg("Firebase লোড ব্যর্থ! ক্যাশ থেকে লোড হচ্ছে।", "error");
+            loadLocalData();
+        }
+    }
+
+    async function syncToFirebase() {
+        if (!isOnline) return;
+        await backgroundSync();
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        document.getElementById('jobDateInput').value = getTodayStr();
+        fillTypeSelect(document.getElementById('jobPieceType'));
+        document.getElementById('filterDate').value = getTodayStr();
+        document.getElementById('todayLabel').style.display = 'inline-block';
+
+        if (!firebase.apps.length) {
+            try { firebase.initializeApp(firebaseConfig); db = firebase.firestore(); }
+            catch (e) { log("Firebase এরর: " + e.message, 'error'); }
+        } else { db = firebase.firestore(); }
+
+        const hasCache = loadLocalData(); // instant — show from cache immediately
+
+        if (isOnline) {
+            if (hasCache) {
+                // Has cache → check silently if Firebase has new data from other devices
+                setTimeout(checkForNewData, 800);
+            } else {
+                // First ever visit → load from Firebase with progress bar
+                loadDataFromFirebase();
+            }
+        }
+    };
+
+    window.addEventListener('online',  () => { isOnline = true;  showMsg("ইন্টারনেট ফিরে এসেছে!", "success"); backgroundSync(); });
+    window.addEventListener('offline', () => { isOnline = false; showMsg("অফলাইন মোডে আছেন।", "error"); });
+
+    // --- CORE FUNCTIONS ---
+    function createJob() {
+        const name = document.getElementById('mainNameInput').value.trim();
+        const date = document.getElementById('jobDateInput').value;
+        const qty  = parseInt(document.getElementById('jobQtyInput').value) || 0;
+        if (!name || !date) { alert("নাম ও তারিখ দিন"); return; }
+        const pType = resolveType('jobPieceType', 'jobPieceCustom');
+        if (qty > 0 && !pType) { alert("পিসের ধরন লিখুন"); return; }
+
+        const newId = 'job_' + Date.now();
+        const newJob = {
+            id: newId, mainName: name, date: date,
+            time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+            subFiles: [], totalMeter: 0, quantity: qty,
+            pieces: (qty > 0 ? [{ id: 'p' + Date.now(), type: pType, qty: qty }] : [])
+        };
+        allData.unshift(newJob);
+        saveToLocal();
+        document.getElementById('mainNameInput').value = '';
+        document.getElementById('jobQtyInput').value = '';
+        document.getElementById('jobPieceCustom').value = '';
+        fillTypeSelect(document.getElementById('jobPieceType'));
+        showMsg("জব তৈরি হয়েছে!", "success");
+        if (isOnline) db.collection(COLLECTION).doc(newId).set(newJob).catch(e => log("সেভ এরর: "+e.message, 'error'));
+    }
+
+    // --- EDIT MAIN FILE NAME ---
+    const SECRET_CODE = "0001";
+    let _codeResolve = null;
+
+    function askCode(action) {
+        return new Promise(resolve => {
+            _codeResolve = resolve;
+            document.getElementById('codeActionLabel').innerText = `"${action}" করতে কোড দিন`;
+            document.getElementById('codeInput').value = '';
+            document.getElementById('codeErr').innerText = '';
+            document.getElementById('codeOverlay').classList.add('active');
+            setTimeout(() => document.getElementById('codeInput').focus(), 100);
+        });
+    }
+
+    function confirmCode() {
+        const val = document.getElementById('codeInput').value;
+        if (val !== SECRET_CODE) {
+            document.getElementById('codeErr').innerText = '❌ ভুল কোড! আবার চেষ্টা করুন।';
+            document.getElementById('codeInput').value = '';
+            document.getElementById('codeInput').focus();
+            return;
+        }
+        document.getElementById('codeOverlay').classList.remove('active');
+        if (_codeResolve) { _codeResolve(true); _codeResolve = null; }
+    }
+
+    function cancelCode() {
+        document.getElementById('codeOverlay').classList.remove('active');
+        if (_codeResolve) { _codeResolve(false); _codeResolve = null; }
+    }
+
+    async function editMainName(jobId) {
+        if (!await askCode("মেইন ফাইল এডিট")) return;
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        const newName = prompt("নতুন মেইন ফাইলের নাম:", job.mainName);
+        if (newName === null || newName.trim() === '') return;
+        job.mainName = newName.trim();
+        saveToLocal();
+        showMsg("মেইন ফাইলের নাম আপডেট হয়েছে!", "success");
+        if (isOnline) db.collection(COLLECTION).doc(jobId).update({ mainName: job.mainName }).catch(e => log("আপডেট এরর: "+e.message, 'error'));
+        renderTable();
+    }
+
+    async function addSubFile(jobId) {
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        const sName = prompt("সাব ফাইলের নাম:");
+        if (!sName) return;
+        const sMeter = parseFloat(prompt("মিটার:"));
+        if (isNaN(sMeter)) { alert("ভুল সংখ্যা"); return; }
+        job.subFiles.push({ id: Date.now(), name: sName, meter: sMeter });
+        job.totalMeter = parseFloat((job.totalMeter + sMeter).toFixed(2));
+        saveToLocal();
+        if (isOnline) db.collection(COLLECTION).doc(jobId).update({ subFiles: job.subFiles, totalMeter: job.totalMeter }).catch(e => log("আপডেট এরর: "+e.message, 'error'));
+        renderTable();
+        updateLastMonthBanner(document.getElementById('monthYearPicker').value || null);
+    }
+
+    async function editSubFile(jobId, subId) {
+        if (!await askCode("সাব ফাইল এডিট")) return;
+        const job = allData.find(j => j.id === jobId);
+        const sub = job?.subFiles.find(s => s.id === subId);
+        if (!sub) return;
+        const newName = prompt("নতুন নাম:", sub.name);
+        if (newName === null) return;
+        const newMeter = parseFloat(prompt("নতুন মিটার:", sub.meter));
+        if (isNaN(newMeter)) return;
+        const diff = newMeter - sub.meter;
+        sub.name = newName;
+        sub.meter = newMeter;
+        job.totalMeter = parseFloat((job.totalMeter + diff).toFixed(2));
+        saveToLocal();
+        if (isOnline) db.collection(COLLECTION).doc(jobId).update({ subFiles: job.subFiles, totalMeter: job.totalMeter }).catch(e => log("আপডেট এরর: "+e.message, 'error'));
+        renderTable();
+        updateLastMonthBanner(document.getElementById('monthYearPicker').value || null);
+    }
+
+    async function deleteSubFile(jobId, subId) {
+        if (!await askCode("ডিলিট")) return;
+        const jobIdx = allData.findIndex(j => j.id === jobId);
+        if (jobIdx === -1) return;
+        const job = allData[jobIdx];
+        const subIdx = job.subFiles.findIndex(s => s.id === subId);
+        if (subIdx === -1) return;
+        const removed = job.subFiles[subIdx].meter;
+        job.subFiles.splice(subIdx, 1);
+        job.totalMeter = parseFloat((job.totalMeter - removed).toFixed(2));
+        if (job.subFiles.length === 0 && confirm("সব সাব ফাইল মুছে গেছে। পুরো জবটিও মুছবেন?")) {
+            allData.splice(jobIdx, 1);
+            if (isOnline) db.collection(COLLECTION).doc(jobId).delete();
+        } else {
+            if (isOnline) db.collection(COLLECTION).doc(jobId).update({ subFiles: job.subFiles, totalMeter: job.totalMeter });
+        }
+        saveToLocal();
+        renderTable();
+        updateLastMonthBanner(document.getElementById('monthYearPicker').value || null);
+    }
+
+    function highlight(text, q) {
+        if (!q) return text;
+        const idx = text.toLowerCase().indexOf(q.toLowerCase());
+        if (idx === -1) return text;
+        return text.slice(0, idx) +
+               `<mark style="background:#ffe066; border-radius:3px; padding:0 2px;">${text.slice(idx, idx + q.length)}</mark>` +
+               highlight(text.slice(idx + q.length), q);
+    }
+
+    // --- SEARCH AUTOCOMPLETE ---
+    // --- SEARCH ---
+    function onSearchInput(val) {
+        const q = val.trim();
+        if (!q) { searchFilter = ''; return; }
+        searchFilter = q;
+        currentPage = 1;
+        rangeFilter = null;
+        document.getElementById('monthYearPicker').value = '';
+        document.getElementById('filterDate').value = '';
+        document.getElementById('last30View').style.display = 'none';
+        document.getElementById('normalView').style.display = 'block';
+        renderTable();
+    }
+
+    // --- DELETE MAIN FILE ---
+    async function deleteMainFile(jobId) {
+        if (!await askCode("মেইন ফাইল ডিলিট")) return;
+        if (!confirm("এই মেইন ফাইলটি সম্পূর্ণ মুছে ফেলবেন?")) return;
+        const idx = allData.findIndex(j => j.id === jobId);
+        if (idx === -1) return;
+        allData.splice(idx, 1);
+        saveToLocal();
+        showMsg("মেইন ফাইল মুছে গেছে!", "success");
+        if (isOnline) db.collection(COLLECTION).doc(jobId).delete().catch(e => log("ডিলিট এরর: "+e.message, 'error'));
+        renderTable();
+    }
+
+    // --- PIECES (multiple types per main file) ---
+    const DEFAULT_PIECE_TYPES = ['Polo', 'T-Shirt', 'Pant'];
+
+    function escHtml(s) {
+        return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function getPieces(job) {
+        if (Array.isArray(job.pieces)) return job.pieces;
+        const q = parseInt(job.quantity) || 0;
+        return q > 0 ? [{ id: 'legacy', type: 'অন্যান্য', qty: q }] : [];
+    }
+    function jobQty(job) { return getPieces(job).reduce((s, p) => s + (parseInt(p.qty) || 0), 0); }
+    function ensurePieces(job) {
+        if (!Array.isArray(job.pieces)) {
+            const q = parseInt(job.quantity) || 0;
+            job.pieces = q > 0 ? [{ id: 'legacy', type: 'অন্যান্য', qty: q }] : [];
+        }
+        return job.pieces;
+    }
+    function syncQty(job) { job.quantity = jobQty(job); }
+
+    function totalsByType(jobs) {
+        const m = {}; let total = 0;
+        jobs.forEach(j => getPieces(j).forEach(p => {
+            const q = parseInt(p.qty) || 0;
+            if (!q) return;
+            m[p.type] = (m[p.type] || 0) + q;
+            total += q;
+        }));
+        return { m, total };
+    }
+
+    function typeChips(m, total) {
+        const entries = Object.entries(m).sort((a, b) => b[1] - a[1]);
+        let h = entries.map(([t, q]) => `<span class="ps-chip"><b>${escHtml(t)}</b>${q}</span>`).join('');
+        if (total !== null && total !== undefined) {
+            h += total > 0
+                ? `<span class="ps-chip ps-total">মোট ${total} পিস</span>`
+                : `<span class="ps-chip" style="color:#aaa;">কোনো পিস নেই</span>`;
+        }
+        return h;
+    }
+
+    function fillTypeSelect(sel) {
+        if (!sel) return;
+        const prev = sel.value;
+        const fromData = [];
+        allData.forEach(j => getPieces(j).forEach(p => { if (p.type) fromData.push(p.type); }));
+        const types = [...new Set([...DEFAULT_PIECE_TYPES, ...fromData])];
+        sel.innerHTML = types.map(t => `<option value="${escHtml(t)}">${escHtml(t)}</option>`).join('')
+                      + '<option value="__other__">+ নিজে লিখুন</option>';
+        if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+    }
+    function onTypeChange(selId, customId) {
+        const isOther = document.getElementById(selId).value === '__other__';
+        const el = document.getElementById(customId);
+        el.style.display = isOther ? 'block' : 'none';
+        if (isOther) el.focus();
+    }
+    function resolveType(selId, customId) {
+        const v = document.getElementById(selId).value;
+        return v === '__other__' ? document.getElementById(customId).value.trim() : v;
+    }
+
+    function persistJob(job, fields) {
+        saveToLocal();
+        if (!isOnline) return;
+        const upd = {};
+        fields.forEach(f => { upd[f] = job[f] === undefined ? null : job[f]; });
+        db.collection(COLLECTION).doc(job.id).update(upd).catch(e => log("আপডেট এরর: " + e.message, 'error'));
+    }
+
+    let _pcJob = null, _pcEdit = null;
+    function openPieceModal(jobId, pieceId) {
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        _pcJob = jobId; _pcEdit = pieceId || null;
+        const sel = document.getElementById('pieceType');
+        const custom = document.getElementById('pieceCustom');
+        fillTypeSelect(sel);
+        custom.value = ''; custom.style.display = 'none';
+        document.getElementById('pieceQty').value = '';
+        if (pieceId) {
+            const p = getPieces(job).find(x => String(x.id) === String(pieceId));
+            if (p) {
+                if ([...sel.options].some(o => o.value === p.type)) sel.value = p.type;
+                else { sel.value = '__other__'; custom.value = p.type; custom.style.display = 'block'; }
+                document.getElementById('pieceQty').value = p.qty;
+            }
+        }
+        document.getElementById('pieceOverlay').classList.add('active');
+        setTimeout(() => document.getElementById('pieceQty').focus(), 100);
+    }
+    function closePieceModal() {
+        document.getElementById('pieceOverlay').classList.remove('active');
+        _pcJob = null; _pcEdit = null;
+    }
+    function savePiece() {
+        const job = allData.find(j => j.id === _pcJob);
+        if (!job) { closePieceModal(); return; }
+        const type = resolveType('pieceType', 'pieceCustom');
+        const qty = parseInt(document.getElementById('pieceQty').value);
+        if (!type) { alert("ধরন লিখুন"); return; }
+        if (isNaN(qty) || qty <= 0) { alert("সঠিক পিস সংখ্যা দিন"); return; }
+        const pieces = ensurePieces(job);
+        if (_pcEdit) {
+            const p = pieces.find(x => String(x.id) === String(_pcEdit));
+            if (p) { p.type = type; p.qty = qty; }
+        } else {
+            const same = pieces.find(x => x.type === type);
+            if (same) same.qty = (parseInt(same.qty) || 0) + qty;
+            else pieces.push({ id: 'p' + Date.now() + Math.floor(Math.random() * 1000), type, qty });
+        }
+        syncQty(job);
+        closePieceModal();
+        persistJob(job, ['pieces', 'quantity']);
+    }
+    async function editPiece(jobId, pieceId) {
+        if (!await askCode("পিস এডিট")) return;
+        openPieceModal(jobId, pieceId);
+    }
+    async function deletePiece(jobId, pieceId) {
+        if (!await askCode("পিস ডিলিট")) return;
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        const pieces = ensurePieces(job);
+        const i = pieces.findIndex(x => String(x.id) === String(pieceId));
+        if (i === -1) return;
+        pieces.splice(i, 1);
+        syncQty(job);
+        persistJob(job, ['pieces', 'quantity']);
+    }
+
+    // --- TOP SUMMARY: day / month (and searched customer) pieces by type ---
+    function renderTopSummary() {
+        const box = document.getElementById('pieceSummary');
+        if (!box) return;
+        const q = (searchFilter || '').toLowerCase();
+        const base = q ? allData.filter(j => (j.mainName || '').toLowerCase().includes(q)) : allData;
+        const picker = document.getElementById('monthYearPicker');
+        const now = new Date();
+        const prefix = (picker && picker.value) ? picker.value : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const [py, pm] = prefix.split('-');
+        const monthLabel = `${bnMonths[parseInt(pm) - 1]} ${py}`;
+        const fd = document.getElementById('filterDate').value;
+        const today = getTodayStr();
+        let h = '';
+        if (q) {
+            const a = totalsByType(base);
+            const allMeter = base.reduce((s, j) => s + parseFloat(j.totalMeter || 0), 0);
+            h += `<div class="ps-row"><span class="ps-title"><i class="fas fa-user-check"></i> "${escHtml(searchFilter)}" — সব সময়:</span>${typeChips(a.m, a.total)}<span class="ps-chip"><b>মিটার</b>${formatNum(allMeter)}</span><span class="ps-chip"><b>জব</b>${base.length}</span></div>`;
+        }
+        if (rangeFilter && !fd && rangeFilter.label === 'শেষ ৩০ দিনের') {
+            const r = totalsByType(base.filter(j => j.date >= rangeFilter.start && j.date <= rangeFilter.end));
+            h += `<div class="ps-row"><span class="ps-title"><i class="fas fa-calendar-week"></i> শেষ ৩০ দিন:</span>${typeChips(r.m, r.total)}</div>`;
+        } else {
+            const day = fd || today;
+            const d = totalsByType(base.filter(j => j.date === day));
+            h += `<div class="ps-row"><span class="ps-title"><i class="fas fa-calendar-day"></i> ${formatDateBD(day)}${day === today ? ' (আজ)' : ''}:</span>${typeChips(d.m, d.total)}</div>`;
+        }
+        const m = totalsByType(base.filter(j => j.date && j.date.startsWith(prefix)));
+        h += `<div class="ps-row"><span class="ps-title"><i class="fas fa-calendar-alt"></i> ${monthLabel} মাস:</span>${typeChips(m.m, m.total)}</div>`;
+        box.innerHTML = h;
+    }
+
+    // --- RATE / AMOUNT CALCULATION ---
+    const rateOpen = new Set();
+    const fmtTk = n => '৳' + Math.round(Number(n) || 0).toLocaleString('en-US');
+    const fmtRate = n => '৳' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+    const fmtQty = n => Number(n).toLocaleString('en-US', { maximumFractionDigits: 6 });
+    function extraUnit(ex) { return ex.unit !== undefined ? ex.unit : (ex.kind === 'fabric' ? 'KG' : ''); }
+    function extraDetail(ex) {
+        if (ex.price === undefined || ex.price === null) return '';
+        const u = extraUnit(ex);
+        return `${fmtQty(parseFloat(ex.qty) || 0)}${u ? ' ' + u : ''} × ${fmtRate(ex.price)}`;
+    }
+    function itemAmount(e) {
+        if (e.price !== undefined && e.price !== null) return Math.round((parseFloat(e.price) || 0) * (e.qty === undefined || e.qty === null ? 1 : (parseFloat(e.qty) || 0)));
+        return Math.round(parseFloat(e.amount) || 0);
+    }
+    function calcInfo(job) {
+        const meter = parseFloat(job.totalMeter || 0);
+        const rate = parseFloat(job.rate || 0) || 0;
+        const base = rate > 0 ? Math.round(meter * rate) : 0;
+        const extras = Array.isArray(job.extras) ? job.extras : [];
+        const extraSum = extras.reduce((s, e) => s + itemAmount(e), 0);
+        const has = rate > 0 || extras.length > 0;
+        return { meter, rate, base, extras, extraSum, has, total: has ? base + extraSum : 0 };
+    }
+    function toggleRate(jobId) {
+        if (rateOpen.has(jobId)) rateOpen.delete(jobId); else rateOpen.add(jobId);
+        renderTable();
+    }
+    function saveRate(jobId, val) {
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        const r = parseFloat(val);
+        job.rate = isNaN(r) || r < 0 ? 0 : r;
+        persistJob(job, ['rate']);
+    }
+    // inline "new row" drafts (no popup): product -> quantity -> unit -> price -> total
+    const drafts = {};
+    const UNIT_LABEL = { meter: 'মিটার', kg: 'KG', pcs: 'পিস' };
+    function draftUnitText(d) { return d.unit === 'other' ? String(d.custom || '').trim() : (UNIT_LABEL[d.unit] || ''); }
+    function addDraft(jobId) {
+        rateOpen.add(jobId);
+        const d = { id: 'd' + Date.now() + Math.floor(Math.random() * 1000), name: '', qty: '', unit: 'kg', custom: '', price: '' };
+        (drafts[jobId] = drafts[jobId] || []).push(d);
+        renderTable();
+        setTimeout(() => { const el = document.getElementById(`d_${d.id}_n`); if (el) el.focus(); }, 50);
+    }
+    function draftPreview(did, d) {
+        const el = document.getElementById(`d_${did}_t`);
+        if (!el) return;
+        const q = parseFloat(d.qty), pr = parseFloat(d.price);
+        el.textContent = (isNaN(q) || isNaN(pr)) ? '' : `মোট: ${fmtTk(q * pr)}`;
+    }
+    function draftSet(jobId, did, field, val) {
+        const d = (drafts[jobId] || []).find(x => x.id === did);
+        if (!d) return;
+        d[field] = val;
+        if (field === 'unit') {
+            const ce = document.getElementById(`d_${did}_c`);
+            if (ce) { ce.style.display = val === 'other' ? 'block' : 'none'; if (val === 'other') ce.focus(); }
+        }
+        draftPreview(did, d);
+    }
+    function cancelDraft(jobId, did) {
+        drafts[jobId] = (drafts[jobId] || []).filter(x => x.id !== did);
+        if (!drafts[jobId].length) delete drafts[jobId];
+        renderTable();
+    }
+    function commitDraft(jobId, did) {
+        const job = allData.find(j => j.id === jobId);
+        const d = (drafts[jobId] || []).find(x => x.id === did);
+        if (!job || !d) return;
+        const name = String(d.name || '').trim();
+        const price = parseFloat(d.price);
+        const qty = parseFloat(d.qty);
+        const bad = { n: !name, q: isNaN(qty) || qty <= 0, p: isNaN(price) };
+        if (bad.n || bad.p || bad.q) {
+            ['n', 'q', 'p'].forEach(k => {
+                const el = document.getElementById(`d_${did}_${k}`);
+                if (el) el.style.borderColor = bad[k] ? '#e74c3c' : '#ccc';
+            });
+            const first = ['n', 'q', 'p'].find(k => bad[k]);
+            const fe = document.getElementById(`d_${did}_${first}`);
+            if (fe) fe.focus();
+            return;
+        }
+        drafts[jobId] = drafts[jobId].filter(x => x.id !== did);
+        if (!drafts[jobId].length) delete drafts[jobId];
+        if (!Array.isArray(job.extras)) job.extras = [];
+        job.extras.push({ id: 'x' + Date.now(), label: name, qty, unit: draftUnitText(d), price });
+        persistJob(job, ['extras']);
+    }
+    function removeExtra(jobId, extraId) {
+        const job = allData.find(j => j.id === jobId);
+        if (!job || !Array.isArray(job.extras)) return;
+        job.extras = job.extras.filter(e => e.id !== extraId);
+        persistJob(job, ['extras']);
+    }
+    function calcHtml(job) {
+        const c = calcInfo(job);
+        const open = rateOpen.has(job.id);
+        let h = `<div class="calc-box">
+            <div style="display:flex;justify-content:center;gap:5px;align-items:center;">
+                <button class="icon-btn mini-btn" style="background:${open ? '#27ae60' : '#95a5a6'};" onclick="toggleRate('${job.id}')" title="হিসাব দেখুন / লুকান"><i class="fas fa-check"></i></button>
+                <button class="icon-btn mini-btn btn-add" onclick="addDraft('${job.id}')" title="নতুন ঘর যোগ করুন"><i class="fas fa-plus"></i></button>
+            </div>`;
+        if (open) {
+            h += `<input type="number" class="calc-input" min="0" step="any" placeholder="রেট / মিটার" value="${c.rate || ''}" onchange="saveRate('${job.id}', this.value)">`;
+            if (c.rate > 0) h += `<div class="calc-extra"><span>${formatNum(c.meter)} মিটার × ${fmtRate(c.rate)}</span><span>${fmtTk(c.base)}</span></div>`;
+            c.extras.forEach(ex => {
+                h += `<div class="calc-extra" style="flex-wrap:wrap;"><span><b>${escHtml(ex.label)}</b> ${extraDetail(ex)}</span><span>${fmtTk(itemAmount(ex))} <i class="fas fa-times" style="cursor:pointer;color:#e74c3c;" onclick="removeExtra('${job.id}','${ex.id}')"></i></span></div>`;
+            });
+            (drafts[job.id] || []).forEach(d => {
+                const J = job.id, D = d.id;
+                const opt = (v, t) => `<option value="${v}"${d.unit === v ? ' selected' : ''}>${t}</option>`;
+                const q = parseFloat(d.qty), pr = parseFloat(d.price);
+                h += `<div class="draft-row">
+                    <input type="text" id="d_${D}_n" class="calc-input" placeholder="পণ্যের নাম" value="${escHtml(d.name)}" oninput="draftSet('${J}','${D}','name',this.value)">
+                    <div style="display:flex;gap:4px;">
+                        <input type="number" id="d_${D}_q" class="calc-input" step="any" min="0" placeholder="পরিমাণ" value="${escHtml(d.qty)}" oninput="draftSet('${J}','${D}','qty',this.value)" style="min-width:0;flex:3;">
+                        <select id="d_${D}_u" class="calc-select" onchange="draftSet('${J}','${D}','unit',this.value)" style="flex:3;">
+                            ${opt('meter', 'Meter')}${opt('kg', 'Kg')}${opt('pcs', 'Pcs')}${opt('other', 'Others')}
+                        </select>
+                    </div>
+                    <input type="text" id="d_${D}_c" class="calc-input" placeholder="একক লিখুন" value="${escHtml(d.custom)}" oninput="draftSet('${J}','${D}','custom',this.value)" style="display:${d.unit === 'other' ? 'block' : 'none'};">
+                    <input type="number" id="d_${D}_p" class="calc-input" step="any" placeholder="দাম / রেট" value="${escHtml(d.price)}" oninput="draftSet('${J}','${D}','price',this.value)" onkeydown="if(event.key==='Enter') commitDraft('${J}','${D}')">
+                    <div class="draft-total" id="d_${D}_t">${(isNaN(q) || isNaN(pr)) ? '' : 'মোট: ' + fmtTk(q * pr)}</div>
+                    <div style="display:flex;gap:6px;justify-content:center;margin-top:3px;">
+                        <button class="draft-ok" onclick="commitDraft('${J}','${D}')">OK</button>
+                        <button class="draft-x" onclick="cancelDraft('${J}','${D}')">✕</button>
+                    </div>
+                </div>`;
+            });
+        }
+        h += c.has
+            ? `<div class="calc-total">মোট: ${fmtTk(c.total)}</div>`
+            : `<div class="calc-hint">হিসাব দেওয়া হয়নি</div>`;
+        return h + `</div>`;
+    }
+
+    // --- ROW ---
+    function buildRow(job, q) {
+        q = q || '';
+        let subs = '';
+        if (job.subFiles && job.subFiles.length) {
+            job.subFiles.forEach(s => {
+                subs += `<div class="sub-row">
+                    <div class="sub-info"><i class="fas fa-file-alt" style="color:#aaa"></i> ${highlight(s.name, q)} <strong>(${formatNum(s.meter)}m)</strong></div>
+                    <div class="sub-actions">
+                        <button class="icon-btn btn-edit" onclick="editSubFile('${job.id}', ${s.id})" title="এডিট"><i class="fas fa-pen"></i></button>
+                        <button class="icon-btn btn-del" onclick="deleteSubFile('${job.id}', ${s.id})" title="ডিলিট"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+        } else {
+            subs = '<small style="color:#999">কোনো সাব ফাইল নেই। (+) চাপুন।</small>';
+        }
+        const isToday = job.date === getTodayStr();
+        const paid = job.paid || false;
+        const paidBtn = paid
+            ? `<button onclick="togglePaid('${job.id}')" style="cursor:pointer;background:#27ae60;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:0.9em;font-weight:bold;width:90px;box-shadow:0 2px 5px rgba(39,174,96,0.3);">✔ PAID</button>`
+            : `<button onclick="togglePaid('${job.id}')" style="cursor:pointer;background:#e74c3c;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:0.9em;font-weight:bold;width:90px;box-shadow:0 2px 5px rgba(231,76,60,0.3);">✖ UNPAID</button>`;
+
+        const pieces = getPieces(job).filter(p => (parseInt(p.qty) || 0) > 0);
+        const piecesHtml = pieces.length
+            ? pieces.map(p => `<div class="pc-row">
+                    <span class="pc-type">${escHtml(p.type)}</span>
+                    <span class="pc-qty">${parseInt(p.qty)}</span>
+                    <button class="icon-btn mini-btn btn-edit" onclick="editPiece('${job.id}','${p.id}')" title="এডিট"><i class="fas fa-pen"></i></button>
+                    <button class="icon-btn mini-btn btn-del" onclick="deletePiece('${job.id}','${p.id}')" title="ডিলিট"><i class="fas fa-trash"></i></button>
+                </div>`).join('') + `<div class="pc-total">মোট ${jobQty(job)} পিস</div>`
+            : '<small style="color:#aaa;">কোনো পিস নেই</small>';
+
+        return `<tr style="${paid ? 'background:#f0fff4;' : ''}">
+            <td>
+                <strong style="color:${isToday ? 'var(--success)' : 'inherit'}">${formatDateBD(job.date)}</strong>${isToday ? ' <span class="today-tag">আজ</span>' : ''}
+                <br><small class="time-text">${formatTime(job.time)}</small>
+            </td>
+            <td>
+                <strong>${highlight(job.mainName, q)}</strong>
+                <div style="display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;">
+                    <button class="icon-btn btn-edit-main" style="width:auto;border-radius:4px;padding:3px 9px;font-size:0.78em;" onclick="editMainName('${job.id}')"><i class="fas fa-pen"></i> এডিট</button>
+                    <button class="icon-btn btn-del" style="width:auto;border-radius:4px;padding:3px 9px;font-size:0.78em;" onclick="deleteMainFile('${job.id}')"><i class="fas fa-trash"></i> ডিলিট</button>
+                </div>
+            </td>
+            <td>${subs}</td>
+            <td style="text-align:center">
+                ${piecesHtml}
+                <div style="margin-top:6px;"><button class="icon-btn btn-add" style="margin:0 auto;" onclick="openPieceModal('${job.id}')" title="পিস যোগ করুন"><i class="fas fa-plus"></i></button></div>
+            </td>
+            <td style="text-align:center">
+                <div style="margin-bottom:5px"><span class="total-badge">${formatNum(job.totalMeter)}m</span></div>
+                <div style="display:flex;justify-content:center;gap:5px">
+                    <button class="icon-btn btn-add" onclick="addSubFile('${job.id}')" title="সাব ফাইল যোগ"><i class="fas fa-plus"></i></button>
+                    <button class="icon-btn" style="background:#8e44ad;" onclick="downloadJobImage('${job.id}')" title="ছবি ডাউনলোড (৫০০KB এর কম)"><i class="fas fa-image"></i></button>
+                </div>
+                ${calcHtml(job)}
+            </td>
+            <td style="text-align:center">${paidBtn}</td>
+        </tr>`;
+    }
+
+    // --- DOWNLOAD JOB AS IMAGE (kept under 500KB) ---
+    async function downloadJobImage(jobId) {
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        const c = calcInfo(job);
+        const subs = job.subFiles || [];
+        const pieces = getPieces(job).filter(p => (parseInt(p.qty) || 0) > 0);
+        const W = 900, P = 44, MAXH = 3200;
+        const FONT = '"Segoe UI", Tahoma, "Noto Sans Bengali", "Nirmala UI", sans-serif';
+        const big = document.createElement('canvas');
+        big.width = W; big.height = MAXH;
+        const x = big.getContext('2d');
+        if (!x) { alert("এই ব্রাউজারে ছবি তৈরি সম্ভব নয়"); return; }
+        x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, MAXH);
+        x.textBaseline = 'middle';
+
+        // header
+        x.fillStyle = '#2c3e50'; x.fillRect(0, 0, W, 100);
+        x.fillStyle = '#ffffff'; x.textAlign = 'left'; x.font = `bold 34px ${FONT}`;
+        x.fillText('প্রিন্ট মিটার হিসাব', P, 50);
+        x.textAlign = 'right'; x.font = `24px ${FONT}`;
+        x.fillText(formatDateBD(job.date), W - P, 50);
+
+        let y = 150;
+        // customer name (shrink to fit)
+        x.textAlign = 'left'; x.fillStyle = '#2c3e50';
+        let fs = 42; x.font = `bold ${fs}px ${FONT}`;
+        while (x.measureText(job.mainName).width > W - 2 * P && fs > 20) { fs -= 2; x.font = `bold ${fs}px ${FONT}`; }
+        x.fillText(job.mainName, P, y);
+        y += 40;
+        x.fillStyle = '#7f8c8d'; x.font = `22px ${FONT}`;
+        x.fillText(formatTime(job.time), P, y);
+        y += 40;
+
+        const rowH = 46;
+        const sectionTitle = (t) => {
+            x.fillStyle = '#ecf0f1'; x.fillRect(P, y, W - 2 * P, 44);
+            x.fillStyle = '#2c3e50'; x.font = `bold 24px ${FONT}`; x.textAlign = 'left';
+            x.fillText(t, P + 14, y + 22);
+            y += 44;
+        };
+        const row = (l, r, o) => {
+            o = o || {};
+            if (o.shade) { x.fillStyle = '#f8f9fa'; x.fillRect(P, y, W - 2 * P, rowH); }
+            x.fillStyle = o.color || '#333';
+            x.font = `${o.bold ? 'bold ' : ''}${o.size || 24}px ${FONT}`;
+            x.textAlign = 'left';  x.fillText(l, P + 14, y + rowH / 2);
+            x.textAlign = 'right'; x.fillText(r, W - P - 14, y + rowH / 2);
+            y += rowH;
+        };
+        const rule = () => { x.fillStyle = '#2c3e50'; x.fillRect(P, y, W - 2 * P, 2); y += 6; };
+
+        // sub files
+        sectionTitle('সাব ফাইল');
+        if (subs.length) subs.forEach((s, i) => row(String(s.name), formatNum(s.meter) + ' m', { shade: i % 2 === 1 }));
+        else row('কোনো সাব ফাইল নেই', '', { color: '#aaa' });
+        rule();
+        row('মোট মিটার', formatNum(job.totalMeter) + ' m', { bold: true, size: 28, color: '#2c3e50' });
+        y += 16;
+
+        // pieces
+        if (pieces.length) {
+            sectionTitle('পিস');
+            pieces.forEach((p, i) => row(String(p.type), String(parseInt(p.qty)) + ' পিস', { shade: i % 2 === 1 }));
+            rule();
+            row('মোট পিস', jobQty(job) + ' পিস', { bold: true, size: 28, color: '#d68910' });
+            y += 16;
+        }
+
+        // amount
+        if (c.has) {
+            sectionTitle('টাকার হিসাব');
+            let i = 0;
+            if (c.rate > 0) row(`${formatNum(c.meter)} মিটার × ${fmtRate(c.rate)}`, fmtTk(c.base), { shade: (i++ % 2) === 1 });
+            c.extras.forEach(ex => {
+                const dt = extraDetail(ex);
+                const lbl = dt ? `${ex.label}  ${dt}` : String(ex.label);
+                row(lbl, fmtTk(itemAmount(ex)), { shade: (i++ % 2) === 1 });
+            });
+            rule();
+            row('মোট টাকা', fmtTk(c.total), { bold: true, size: 32, color: '#27ae60' });
+            y += 16;
+        }
+
+        // paid stamp
+        const paid = !!job.paid;
+        x.textAlign = 'center'; x.font = `bold 30px ${FONT}`;
+        x.fillStyle = paid ? '#27ae60' : '#e74c3c';
+        x.fillText(paid ? '✔ PAID' : '✖ UNPAID', W / 2, y + 30);
+        y += 80;
+
+        const out = document.createElement('canvas');
+        out.width = W; out.height = Math.min(y, MAXH);
+        out.getContext('2d').drawImage(big, 0, 0, W, out.height, 0, 0, W, out.height);
+
+        const LIMIT = 500 * 1024;
+        const toBlob = (cv, q) => new Promise(res => cv.toBlob(res, 'image/jpeg', q));
+        let blob = null, quality = 0.92, cv = out;
+        for (let attempt = 0; attempt < 12; attempt++) {
+            blob = await toBlob(cv, quality);
+            if (blob && blob.size <= LIMIT) break;
+            if (quality > 0.4) quality -= 0.1;
+            else {
+                const s = document.createElement('canvas');
+                s.width = Math.round(cv.width * 0.8); s.height = Math.round(cv.height * 0.8);
+                s.getContext('2d').drawImage(cv, 0, 0, s.width, s.height);
+                cv = s;
+            }
+        }
+        if (!blob) { alert("ছবি তৈরি করা যায়নি"); return; }
+        const safe = String(job.mainName).replace(/[^\w\u0980-\u09FF-]+/g, '_').slice(0, 40) || 'job';
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${safe}_${job.date}.jpg`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        showMsg(`ছবি ডাউনলোড হয়েছে (${Math.round(blob.size / 1024)} KB)`, "success");
+    }
+
+    function togglePaid(jobId) {
+        const job = allData.find(j => j.id === jobId);
+        if (!job) return;
+        if (!confirm(`আপনি কি নিশ্চিত? এই জবটি ${job.paid ? 'UNPAID' : 'PAID'} করবেন?`)) return;
+        job.paid = !job.paid;
+        saveToLocal();
+        if (isOnline) db.collection(COLLECTION).doc(jobId).update({ paid: job.paid }).catch(e => log("এরর: "+e.message, 'error'));
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        const filter = document.getElementById('filterDate').value;
+        tbody.innerHTML = '';
+        const banner = document.getElementById('rangeFilterBanner');
+        const q = searchFilter.toLowerCase();
+
+        let list, emptyText;
+        if (searchFilter) {
+            list = allData.filter(j => (j.mainName || '').toLowerCase().includes(q));
+            emptyText = `"${searchFilter}" এর কোনো ফলাফল নেই`;
+            banner.style.display = 'none';
+        } else if (rangeFilter) {
+            list = allData.filter(i => i.date >= rangeFilter.start && i.date <= rangeFilter.end);
+            emptyText = 'এই সময়ে কোনো ডাটা নেই';
+            banner.style.display = 'flex';
+            document.getElementById('rangeFilterLabel').innerText = rangeFilter.label || 'শেষ ৩০ দিনের';
+            document.getElementById('rangeFilterText').innerText = `${formatDateBD(rangeFilter.start)} থেকে ${formatDateBD(rangeFilter.end)} পর্যন্ত`;
+        } else {
+            list = filter ? allData.filter(i => i.date === filter) : allData;
+            emptyText = filter ? 'এই তারিখে ডাটা নেই' : 'কোনো ডাটা নেই';
+            banner.style.display = 'none';
+        }
+
+        const grand = list.reduce((s, j) => s + parseFloat(j.totalMeter || 0), 0);
+        document.getElementById('grandTotal').innerText = formatNum(grand);
+        document.getElementById('todayLabel').style.display = (!rangeFilter && !searchFilter && filter === getTodayStr()) ? 'inline-block' : 'none';
+
+        fillTypeSelect(document.getElementById('jobPieceType'));
+
+        document.getElementById('qtyBar').style.display = 'none';
+        renderTopSummary();
+
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-msg">${emptyText}</td></tr>`;
+            document.getElementById('paginationBar').style.display = 'none';
+            return;
+        }
+
+        const bar = document.getElementById('paginationBar');
+        if (searchFilter) {
+            const totalPages = Math.ceil(list.length / PAGE_SIZE);
+            if (currentPage > totalPages) currentPage = totalPages;
+            const startIdx = (currentPage - 1) * PAGE_SIZE;
+            tbody.innerHTML = list.slice(startIdx, startIdx + PAGE_SIZE).map(j => buildRow(j, searchFilter)).join('');
+            if (totalPages > 1) {
+                bar.style.display = 'flex';
+                document.getElementById('pageInfo').innerText = `পেজ ${currentPage} / ${totalPages}  (মোট ${list.length} টি)`;
+                document.getElementById('prevBtn').disabled = currentPage === 1;
+                document.getElementById('nextBtn').disabled = currentPage === totalPages;
+            } else {
+                bar.style.display = 'none';
+            }
+        } else {
+            tbody.innerHTML = list.map(j => buildRow(j)).join('');
+            bar.style.display = 'none';
+        }
+    }
+
+    function changePage(dir) {
+        currentPage += dir;
+        renderTable();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setTodayFilter() {
+        rangeFilter = null; searchFilter = ''; currentPage = 1;
+        document.getElementById('filterDate').value = getTodayStr();
+        document.getElementById('monthYearPicker').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('last30View').style.display = 'none';
+        document.getElementById('normalView').style.display = 'block';
+        renderTable();
+    }
+
+
+    function downloadJSON() {
+        const blob = new Blob([JSON.stringify(allData, null, 2)], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Backup_${getTodayStr()}.json`;
+        a.click();
+    }
+    function uploadJSON(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if(Array.isArray(data)) {
+                    allData = data;
+                    saveToLocal();
+                    alert("ডাটা ইম্পোর্ট সফল!");
+                    if(isOnline) syncToFirebase();
+                }
+            } catch(err) { alert("ভুল ফাইল!"); }
+        };
+        reader.readAsText(file);
+    }
+    // --- LAST 30 DAYS (uses the exact same table/render as 'আজ', just a date range) ---
+    function getLast30DaysRange() {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 29);
+        const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        return { start: toStr(start), end: toStr(end) };
+    }
+
+    function showLast30Days() {
+        // hide normal view, show last30 dedicated view
+        searchFilter = ''; currentPage = 1;
+        document.getElementById('filterDate').value = '';
+        document.getElementById('monthYearPicker').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('normalView').style.display = 'none';
+        document.getElementById('rangeFilterBanner').style.display = 'none';
+        document.getElementById('last30View').style.display = 'block';
+        last30Page = 1;
+        renderLast30();
+    }
+
+    function closeLast30View() {
+        document.getElementById('last30View').style.display = 'none';
+        document.getElementById('normalView').style.display = 'block';
+        renderTable();
+    }
+
+    function renderLast30() {
+        const { start, end } = getLast30DaysRange();
+        document.getElementById('last30RangeText').innerText = `${formatDateBD(start)} থেকে ${formatDateBD(end)} পর্যন্ত`;
+        const list = allData.filter(j => j.date >= start && j.date <= end);
+        const tbody = document.getElementById('last30TableBody');
+        const grand = list.reduce((s, j) => s + parseFloat(j.totalMeter || 0), 0);
+        document.getElementById('last30GrandTotal').innerText = formatNum(grand);
+
+        if (list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">এই ৩০ দিনে কোনো ডাটা নেই</td></tr>`;
+            document.getElementById('last30PaginationBar').style.display = 'none';
+            return;
+        }
+
+        tbody.innerHTML = list.map(j => buildRow(j)).join('');
+        document.getElementById('last30PaginationBar').style.display = 'none';
+    }
+
+    function changeLast30Page(dir) {
+        last30Page += dir;
+        renderLast30();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showMonthFilter(value) {
+        if (!value) { updateLastMonthBanner(); return; }
+        const [year, month] = value.split('-');
+        const start = `${year}-${month}-01`;
+        const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+        const end = `${year}-${month}-${String(lastDay).padStart(2,'0')}`;
+        const label = `${bnMonths[parseInt(month)-1]} ${year} মাসের`;
+        rangeFilter = { start, end, label };
+        searchFilter = ''; currentPage = 1;
+        document.getElementById('filterDate').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('last30View').style.display = 'none';
+        document.getElementById('normalView').style.display = 'block';
+        updateLastMonthBanner(`${year}-${month}`);
+        renderTable();
+    }
+
+    function clearRangeFilter() {
+        rangeFilter = null; currentPage = 1;
+        document.getElementById('monthYearPicker').value = '';
+        updateLastMonthBanner();
+        renderTable();
+    }
+
+</script>
+</body>
+</html>
